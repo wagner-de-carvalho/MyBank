@@ -2,50 +2,20 @@
 
 -export([start/0, stop/0]).
 -export([deposit/2]).
--export([init/0]).
+-export([balance/1]).
+-export([withdraw/2]).
 
-%% ============= API =================
 start() ->
-    io:format("------> Opening bank.~n"),
-    Pid = spawn(?MODULE, init, []),
-    register(?MODULE, Pid).
+    mybank_sup:start().
 
 stop() ->
-    ?MODULE ! terminate.
+    mybank_sup:stop().
 
 deposit(AccountId, Amount) ->
-    ?MODULE ! {deposit, self(), AccountId, Amount},
-    receive
-        Reply ->
-            Reply
-    after 5000 ->
-        {error, timeout}
-    end.
+    mybank_atm:deposit(AccountId, Amount).
 
-%% ============= Internal =================
-init() ->
-    Accounts = dict:new(),
-    main_loop(Accounts).
+balance(AccountId) ->
+    mybank_atm:balance(AccountId).
 
-main_loop(Accounts) ->
-    receive
-        {deposit, CallerPid, AccountId, Amount} ->
-            CurrentBalance =
-                case dict:find(AccountId, Accounts) of
-                    error ->
-                        0;
-                    {ok, Amount0} ->
-                        Amount0
-                end,
-            Accounts1 = dict:store(AccountId, CurrentBalance + Amount, Accounts),
-            CallerPid ! ok,
-            main_loop(Accounts1);
-        terminate ->
-            io:format("------> Closing bank.~n")
-    end.
-
-
-
-
-
-
+withdraw(AccountId, Amount) ->
+    mybank_atm:withdraw(AccountId, Amount).
