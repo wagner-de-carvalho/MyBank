@@ -1,27 +1,25 @@
 -module(mybank_sup).
 
--export([start/0]).
--export([stop/0]).
--export([init/0]).
+-behaviour(supervisor).
 
-start() ->
-    Pid = spawn(?MODULE, init, []),
-    register(?MODULE, Pid).
+-export([start_link/0]).
+%% supervisor callbacks
+-export([init/1]).
 
-stop() ->
-    ?MODULE ! terminate.
+start_link() ->
+    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
-init() ->
-    process_flag(trap_exit, true),
-    {ok, SupervisedPid} = mybank_atm:start_link(),
-    main_loop(SupervisedPid).
-
-main_loop(SupervisedPid) ->
-    receive
-        {'EXIT', SupervisedPid, _} ->
-            error_logger:error_msg("mybank process died, respawning ..."),
-            {ok, SupervisedPid1} = mybank_atm:start_link(),
-            main_loop(SupervisedPid1);
-        terminate ->
-            mybank_atm:stop()
-    end.
+init([]) ->
+    Children =
+        %% id
+        [{mybank_atm,
+          %% {module, start_link, args}
+          {mybank_atm, start_link, []},
+          %% restart type
+          permanent,
+          %% shutdown interval
+          1000,
+          %% type of supervised process
+          worker,
+          [mybank_atm]}],
+    {ok, {{one_for_one, 10, 10}, Children}}.
