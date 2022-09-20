@@ -6,10 +6,10 @@
 -export([withdraw/2]).
 
 start() ->
-    mybank_sup:start().
+    application:start(mybank).
 
 stop() ->
-    mybank_sup:stop().
+    application:stop(mybank).
 
 deposit(AccountId, Amount) ->
     mybank_atm:deposit(AccountId, Amount).
